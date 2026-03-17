@@ -4,7 +4,7 @@ FROM python:3.14
 RUN apt-get update -y && apt-get install -y cron logrotate
 
 # Install aws cli
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64-2.17.13.zip" -o "awscliv2.zip" && \
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.17.13.zip" -o "awscliv2.zip" && \
   unzip awscliv2.zip && \
   ./aws/install --update
 
