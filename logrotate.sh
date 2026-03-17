@@ -10,7 +10,7 @@ cat <<EOF > /tmp/logrotate.conf
     compress
     delaycompress
     postrotate
-        /app/import.sh
+        /app/export.sh
     endscript
 }
 EOF

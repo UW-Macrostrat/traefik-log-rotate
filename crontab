@@ -1,3 +1,3 @@
-# Run logrotate.sh daily at midnight
-0 * * * * /app/logrotate.sh >> /var/log/cron.log 2>&1
+# Run logrotate.sh on the hour
+0/5 * * * * /app/logrotate.sh >> /var/log/cron.log 2>&1
 0 * * * * echo "Hello World! I am working!" >> /var/log/cron.log 2>&1
