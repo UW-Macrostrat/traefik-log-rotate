@@ -9,29 +9,6 @@ ROTATED_LOG_FILE="$LOG_PATH.1"
 if [ -f "$ROTATED_LOG_FILE" ]; then
     echo "Log rotation successful. Processing the rotated log file."
 
-    # Compress the rotated log before upload
-    COMPRESSED_LOG_FILE="${ROTATED_LOG_FILE}.gz"
-    if ! gzip -c "$ROTATED_LOG_FILE" > "$COMPRESSED_LOG_FILE"; then
-        echo "Failed to compress rotated log file."
-        exit 1
-    fi
-
-    # Upload the compressed log file to S3
-    TIMESTAMP=$(date +"%Y%m%dT%H00Z") # Cron runs on the hour, so we round to the hour
-    HASH_SUFFIX=$(cksum "$COMPRESSED_LOG_FILE" | cut -d ' ' -f 1 | cut -c1-8)
-    S3_KEY="${TIMESTAMP}_HASH${HASH_SUFFIX}_access.log.gz"
-    echo "Uploading $COMPRESSED_LOG_FILE to s3://$S3_BUCKET/$S3_KEY ..."
-
-    aws s3 cp "$COMPRESSED_LOG_FILE" "s3://$S3_BUCKET/$S3_KEY"
-
-    if [ $? -ne 0 ]; then
-        echo "Failed to upload log file to S3."
-        exit 1
-    fi
-    echo "Upload to S3 successful."
-
-    rm -f "$COMPRESSED_LOG_FILE"
-
     # Find the PID of the traefik process
     TRAEFIK_PID=$(pgrep traefik)
 
@@ -42,8 +19,35 @@ if [ -f "$ROTATED_LOG_FILE" ]; then
         echo "Sent USR1 signal to traefik process with PID $TRAEFIK_PID"
     else
         echo "Traefik process not found."
+    fi
+
+    # Make sure traefik has time to reopen the log file before we try to compress it
+    sleep 10
+
+    # Get the uploaded log file name
+    TIMESTAMP=$(date +"%Y%m%dT%H00Z") # Cron runs on the hour, so we round to the hour
+    HASH_SUFFIX=$(cksum "$ROTATED_LOG_FILE" | cut -d ' ' -f 1 | cut -c1-8)
+    S3_KEY="${TIMESTAMP}_HASH${HASH_SUFFIX}_access.log.gz"
+
+    # Compress the rotated log before upload
+    if ! gzip -c "$ROTATED_LOG_FILE" > "$S3_KEY"; then
+        echo "Failed to compress rotated log file."
         exit 1
     fi
+
+    # Upload the compressed log file to S3
+    echo "Uploading $S3_KEY to s3://$S3_BUCKET/$S3_KEY ..."
+
+    /usr/local/bin/aws s3 cp "$S3_KEY" "s3://$S3_BUCKET/$S3_KEY"
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to upload log file to S3."
+        exit 1
+    fi
+
+    rm -f "$S3_KEY"
+
+    echo "Upload to S3 successful."
 else
     echo "Rotated log file not found."
     exit 1
