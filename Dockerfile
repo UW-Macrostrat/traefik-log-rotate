@@ -1,7 +1,8 @@
 FROM python:3.14
 
-# Install cron
-RUN apt-get update -y && apt-get install -y cron logrotate
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends cron logrotate zstd && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install aws cli
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.17.13.zip" -o "awscliv2.zip" && \

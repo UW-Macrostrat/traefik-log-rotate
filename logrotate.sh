@@ -2,11 +2,11 @@
 
 echo "Running logrotate"
 
-# Create a temporary logrotate configuration file that rotates hourly and keeps 168 ( 7 days ) rotated logs
+# Create a temporary logrotate configuration file that rotates hourly and keeps  ( 3 days ) rotated logs
 cat <<EOF > /tmp/logrotate.conf
 "$LOG_PATH" {
     hourly
-    rotate 168
+    rotate 72
     compress
     delaycompress
     postrotate
