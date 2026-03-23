@@ -25,9 +25,8 @@ if [ -f "$ROTATED_LOG_FILE" ]; then
     sleep 10
 
     # Get the uploaded log file name
-    TIMESTAMP=$(date +"%Y%m%dT%H00Z") # Cron runs on the hour, so we round to the hour
     HASH_SUFFIX=$(cksum "$ROTATED_LOG_FILE" | cut -d ' ' -f 1 | cut -c1-8)
-    S3_KEY="${TIMESTAMP}_HASH${HASH_SUFFIX}_access.log.zst"
+    S3_KEY="$(date +"%Y")/$(date +"%m")/$(date +"%d")/$(date +"%H")00_HASH${HASH_SUFFIX}_access.log.zst"
 
     # Compress the rotated log before upload
     if ! zstd -19 -q -c "$ROTATED_LOG_FILE" > "$S3_KEY"; then
