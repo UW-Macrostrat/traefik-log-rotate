@@ -28,23 +28,28 @@ if [ -f "$ROTATED_LOG_FILE" ]; then
     HASH_SUFFIX=$(cksum "$ROTATED_LOG_FILE" | cut -d ' ' -f 1 | cut -c1-8)
     S3_KEY="$(date +"%Y")/$(date +"%m")/$(date +"%d")/$(date +"%H")00_HASH${HASH_SUFFIX}_access.log.zst"
 
+    # Use a temp directory for the compressed file
+    COMPRESSED_FILE="/tmp/$S3_KEY"
+    COMPRESSED_FILE_DIR=$(dirname "$COMPRESSED_FILE")
+    mkdir -p "$COMPRESSED_FILE_DIR"
+
     # Compress the rotated log before upload
-    if ! zstd -19 -q -c "$ROTATED_LOG_FILE" > "$S3_KEY"; then
+    if ! zstd -19 -q -c "$ROTATED_LOG_FILE" > "$COMPRESSED_FILE"; then
         echo "Failed to compress rotated log file."
         exit 1
     fi
 
     # Upload the compressed log file to S3
-    echo "Uploading $S3_KEY to s3://$S3_BUCKET/$S3_KEY ..."
+    echo "Uploading $COMPRESSED_FILE to s3://$S3_BUCKET/$S3_KEY ..."
 
-    /usr/local/bin/aws s3 cp "$S3_KEY" "s3://$S3_BUCKET/$S3_KEY"
+    /usr/local/bin/aws s3 cp "$COMPRESSED_FILE" "s3://$S3_BUCKET/$S3_KEY"
 
     if [ $? -ne 0 ]; then
         echo "Failed to upload log file to S3."
         exit 1
     fi
 
-    rm -f "$S3_KEY"
+    rm -f "$COMPRESSED_FILE"
 
     echo "Upload to S3 successful."
 else
